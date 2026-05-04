@@ -5,9 +5,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Pink Study Planner</title>
+    <title>Pink Study Tracker</title>
+    <link rel="icon"
+        href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎀</text></svg>' />
 
-    <!-- React -->
+    <!-- React + Babel -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -48,14 +50,13 @@
                         'float-soft': 'float-soft 4s ease-in-out infinite',
                         'sparkle': 'sparkle 2s ease-in-out infinite',
                         'slide-out': 'slide-out-right 0.3s ease-in-out forwards',
-                        'fade-in': 'fade-in-up 0.4s ease-out forwards'
+                        'fade-in': 'fade-in-up 0.4s ease-out forwards',
                     }
                 }
             }
-        }
+        };
     </script>
 
-    <!-- Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800;900&display=swap"
@@ -148,23 +149,21 @@
         // API CONFIG
         // =========================
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUGXJ-pz0X_T0NeN665rGcR121NXHAMtAflHP9KpSD_wlVpMYDVBVyjBz_nuK-0vxt4g/exec";
-
         const GOOGLE_CLIENT_ID = "501142555959-b18ek5f4v9rj6rov5foiqjl02llrr8p6.apps.googleusercontent.com";
-
         const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
         const SCOPES = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly";
 
         // =========================
-        // STATIC DATA
+        // DATA
         // =========================
         const categories = [
-            { name: "Học cá nhân", color: "text-pink-700", bg: "bg-pink-100", dot: "bg-pink-500" },
-            { name: "Trường học", color: "text-violet-700", bg: "bg-violet-100", dot: "bg-violet-500" },
-            { name: "IELTS", color: "text-sky-700", bg: "bg-sky-100", dot: "bg-sky-500" },
-            { name: "CONTENT", color: "text-rose-700", bg: "bg-rose-100", dot: "bg-rose-500" },
-            { name: "BANK", color: "text-indigo-700", bg: "bg-indigo-100", dot: "bg-indigo-500" },
-            { name: "FINANCE", color: "text-amber-700", bg: "bg-amber-100", dot: "bg-amber-500" },
-            { name: "Cá nhân", color: "text-emerald-700", bg: "bg-emerald-100", dot: "bg-emerald-500" }
+            { name: "Học cá nhân", color: "text-pink-700", bg: "bg-pink-100" },
+            { name: "Trường học", color: "text-violet-700", bg: "bg-violet-100" },
+            { name: "IELTS", color: "text-sky-700", bg: "bg-sky-100" },
+            { name: "CONTENT", color: "text-rose-700", bg: "bg-rose-100" },
+            { name: "BANK", color: "text-indigo-700", bg: "bg-indigo-100" },
+            { name: "FINANCE", color: "text-amber-700", bg: "bg-amber-100" },
+            { name: "Cá nhân", color: "text-emerald-700", bg: "bg-emerald-100" }
         ];
 
         const topics = [
@@ -210,8 +209,6 @@
                 links: []
             }
         ];
-
-        const DEFAULT_EXAMS = [];
 
         // =========================
         // ICONS
@@ -321,8 +318,7 @@
         // =========================
         const getLocalDateString = (date = new Date()) => {
             const offset = date.getTimezoneOffset() * 60000;
-            const localISOTime = new Date(date.getTime() - offset).toISOString();
-            return localISOTime.split("T")[0];
+            return new Date(date.getTime() - offset).toISOString().split("T")[0];
         };
 
         const todayStr = getLocalDateString();
@@ -342,38 +338,40 @@
             localStorage.setItem(key, JSON.stringify(value));
         };
 
+        const safeJsonParse = (text) => {
+            try {
+                return JSON.parse(text);
+            } catch {
+                return { status: "error", raw: text };
+            }
+        };
+
         const formatDateLabel = (dStr) => {
             if (!dStr) return "";
             if (dStr === todayStr) return "Hôm nay";
             if (dStr === tomorrowStr) return "Ngày mai";
             if (dStr === yesterdayStr) return "Hôm qua";
-
             const parts = dStr.split("-");
             return `${parts[2]}/${parts[1]}/${parts[0]}`;
         };
 
         const parseDateRange = (dateStr) => {
             if (!dateStr) return { start: todayStr, end: todayStr };
-
             if (dateStr.includes("|")) {
                 const [start, end] = dateStr.split("|");
                 return { start, end };
             }
-
             return { start: dateStr, end: dateStr };
         };
 
         const formatDisplayDate = (dateStr) => {
             const { start, end } = parseDateRange(dateStr);
-
             if (start === end) return formatDateLabel(start);
-
-            const formatShort = (d) => {
+            const short = (d) => {
                 const p = d.split("-");
                 return `${p[2]}/${p[1]}`;
             };
-
-            return `${formatShort(start)} - ${formatShort(end)}`;
+            return `${short(start)} - ${short(end)}`;
         };
 
         const getWeekRange = () => {
@@ -395,8 +393,7 @@
         const getCategoryStyle = (name) => {
             return categories.find(c => c.name === name) || {
                 color: "text-slate-700",
-                bg: "bg-slate-100",
-                dot: "bg-slate-500"
+                bg: "bg-slate-100"
             };
         };
 
@@ -412,20 +409,20 @@
             if (Array.isArray(data)) {
                 return {
                     tasks: data,
-                    exams: readLocalJson("pink_exams", DEFAULT_EXAMS),
+                    exams: readLocalJson("pink_exams", []),
                     customLinks: readLocalJson("pink_custom_links", {}),
-                    predefinedLinkStatus: readLocalJson("pink_predefined_links", {}),
                     schoolSubjects: readLocalJson("pink_school_subjects", [])
                 };
             }
 
-            const state = data && typeof data === "object" ? data : {};
+            const state = data && typeof data === "object"
+                ? (data.state && typeof data.state === "object" ? data.state : data)
+                : {};
 
             return {
                 tasks: Array.isArray(state.tasks) ? state.tasks : readLocalJson("pink_tasks_cache", []),
-                exams: Array.isArray(state.exams) ? state.exams : readLocalJson("pink_exams", DEFAULT_EXAMS),
+                exams: Array.isArray(state.exams) ? state.exams : readLocalJson("pink_exams", []),
                 customLinks: state.customLinks && typeof state.customLinks === "object" ? state.customLinks : readLocalJson("pink_custom_links", {}),
-                predefinedLinkStatus: state.predefinedLinkStatus && typeof state.predefinedLinkStatus === "object" ? state.predefinedLinkStatus : readLocalJson("pink_predefined_links", {}),
                 schoolSubjects: Array.isArray(state.schoolSubjects) ? state.schoolSubjects : readLocalJson("pink_school_subjects", [])
             };
         };
@@ -435,16 +432,15 @@
         // =========================
         const App = () => {
             const [tasks, setTasks] = useState([]);
-            const [exams, setExams] = useState(() => sortExamsByDate(readLocalJson("pink_exams", DEFAULT_EXAMS)));
-
+            const [exams, setExams] = useState(() => sortExamsByDate(readLocalJson("pink_exams", [])));
             const [customLinks, setCustomLinks] = useState(() => readLocalJson("pink_custom_links", {}));
-            const [predefinedLinkStatus, setPredefinedLinkStatus] = useState(() => readLocalJson("pink_predefined_links", {}));
             const [schoolSubjects, setSchoolSubjects] = useState(() => readLocalJson("pink_school_subjects", []));
 
             const [isDbLoading, setIsDbLoading] = useState(true);
             const [syncStatus, setSyncStatus] = useState("idle");
-            const [activeTab, setActiveTab] = useState("today");
+            const [syncMessage, setSyncMessage] = useState("");
 
+            const [activeTab, setActiveTab] = useState("today");
             const [newTaskText, setNewTaskText] = useState("");
             const [newTaskCat, setNewTaskCat] = useState("Học cá nhân");
             const [newTaskStartDate, setNewTaskStartDate] = useState(todayStr);
@@ -455,7 +451,6 @@
             const [addingLinkTo, setAddingLinkTo] = useState(null);
             const [newLinkName, setNewLinkName] = useState("");
             const [newLinkUrl, setNewLinkUrl] = useState("");
-
             const [newSubjectName, setNewSubjectName] = useState("");
 
             const [showAddExam, setShowAddExam] = useState(false);
@@ -479,7 +474,6 @@
             useEffect(() => writeLocalJson("pink_tasks_cache", tasks), [tasks]);
             useEffect(() => writeLocalJson("pink_exams", exams), [exams]);
             useEffect(() => writeLocalJson("pink_custom_links", customLinks), [customLinks]);
-            useEffect(() => writeLocalJson("pink_predefined_links", predefinedLinkStatus), [predefinedLinkStatus]);
             useEffect(() => writeLocalJson("pink_school_subjects", schoolSubjects), [schoolSubjects]);
             useEffect(() => writeLocalJson("pink_calendar_events", calendarEvents), [calendarEvents]);
 
@@ -546,27 +540,31 @@
             useEffect(() => {
                 const loadPlannerData = async () => {
                     try {
-                        const res = await fetch(SCRIPT_URL, {
+                        const res = await fetch(`${SCRIPT_URL}?action=read&_=${Date.now()}`, {
                             method: "GET",
-                            redirect: "follow"
+                            redirect: "follow",
+                            cache: "no-store"
                         });
 
-                        const data = await res.json();
+                        const text = await res.text();
+                        const data = safeJsonParse(text);
                         const planner = normalizePlannerPayload(data);
 
                         setTasks(planner.tasks);
                         setExams(sortExamsByDate(planner.exams));
                         setCustomLinks(planner.customLinks);
-                        setPredefinedLinkStatus(planner.predefinedLinkStatus);
                         setSchoolSubjects(planner.schoolSubjects);
+
+                        setSyncMessage("Đã tải DB");
                     } catch (err) {
                         console.error("Không tải được DB, dùng cache local:", err);
 
                         setTasks(readLocalJson("pink_tasks_cache", []));
-                        setExams(sortExamsByDate(readLocalJson("pink_exams", DEFAULT_EXAMS)));
+                        setExams(sortExamsByDate(readLocalJson("pink_exams", [])));
                         setCustomLinks(readLocalJson("pink_custom_links", {}));
-                        setPredefinedLinkStatus(readLocalJson("pink_predefined_links", {}));
                         setSchoolSubjects(readLocalJson("pink_school_subjects", []));
+
+                        setSyncMessage("Đang dùng cache local vì chưa tải được DB");
                     } finally {
                         hasLoadedFromDb.current = true;
                         setIsDbLoading(false);
@@ -585,17 +583,22 @@
                 const timeout = setTimeout(async () => {
                     try {
                         setSyncStatus("syncing");
+                        setSyncMessage("Đang lưu việc cần làm và lịch kiểm tra vào DB...");
 
-                        const payload = {
-                            action: "writeFull",
-                            version: 3,
-                            theme: "pink-cute",
-                            updatedAt: new Date().toISOString(),
+                        const state = {
                             tasks,
                             exams: sortExamsByDate(exams),
                             customLinks,
-                            predefinedLinkStatus,
                             schoolSubjects
+                        };
+
+                        const payload = {
+                            action: "writeFull",
+                            version: 5,
+                            theme: "pink-cute-single-html",
+                            updatedAt: new Date().toISOString(),
+                            ...state,
+                            state
                         };
 
                         const res = await fetch(SCRIPT_URL, {
@@ -607,23 +610,25 @@
                             redirect: "follow"
                         });
 
-                        const data = await res.json();
+                        const text = await res.text();
+                        const data = safeJsonParse(text);
 
-                        if (data.status === "success") {
+                        if (data.status === "success" || data.ok === true || data.result === "success") {
                             setSyncStatus("saved");
+                            setSyncMessage("Đã lưu DB");
                             setTimeout(() => setSyncStatus("idle"), 1800);
                         } else {
-                            setSyncStatus("error");
-                            console.error("Apps Script error:", data);
+                            throw new Error(data.message || data.raw || "Apps Script không trả về status success");
                         }
                     } catch (err) {
-                        setSyncStatus("error");
                         console.error("Không lưu được DB:", err);
+                        setSyncStatus("error");
+                        setSyncMessage("Lỗi đồng bộ DB: kiểm tra Code.gs có hỗ trợ action writeFull không");
                     }
                 }, 900);
 
                 return () => clearTimeout(timeout);
-            }, [tasks, exams, customLinks, predefinedLinkStatus, schoolSubjects, isDbLoading]);
+            }, [tasks, exams, customLinks, schoolSubjects, isDbLoading]);
 
             // =========================
             // GOOGLE CALENDAR FUNCTIONS
@@ -674,7 +679,7 @@
 
                             return items.map(item => ({
                                 ...item,
-                                backgroundColor: item.colorId ? item.backgroundColor : cal.backgroundColor,
+                                backgroundColor: item.backgroundColor || cal.backgroundColor,
                                 calendarSummary: cal.summary
                             }));
                         } catch (e) {
@@ -789,9 +794,7 @@
             const calculateDaysLeft = (dateStr) => {
                 const today = new Date(todayStr + "T00:00:00");
                 const target = new Date(dateStr + "T00:00:00");
-
                 const diffTime = target - today;
-
                 return Math.ceil(diffTime / 86400000);
             };
 
@@ -946,13 +949,6 @@
                 });
             };
 
-            const togglePredefinedLink = (key) => {
-                setPredefinedLinkStatus(prev => ({
-                    ...prev,
-                    [key]: !prev[key]
-                }));
-            };
-
             const addSchoolSubject = () => {
                 if (!newSubjectName.trim()) return;
 
@@ -985,14 +981,6 @@
                     });
                 } else if (topic.subSections) {
                     topic.subSections.forEach((sub, sIdx) => {
-                        sub.links.forEach((link, lIdx) => {
-                            total++;
-
-                            if (predefinedLinkStatus[`topic_${idx}_sub_${sIdx}_link_${lIdx}`]) {
-                                completed++;
-                            }
-                        });
-
                         const key = `topic_${idx}_sub_${sIdx}`;
                         const links = customLinks[key] || [];
 
@@ -1000,14 +988,6 @@
                         completed += links.filter(l => l.completed).length;
                     });
                 } else {
-                    topic.links.forEach((link, lIdx) => {
-                        total++;
-
-                        if (predefinedLinkStatus[`topic_${idx}_link_${lIdx}`]) {
-                            completed++;
-                        }
-                    });
-
                     const key = `topic_${idx}`;
                     const links = customLinks[key] || [];
 
@@ -1103,8 +1083,7 @@
                                     <div className="flex gap-2">
                                         <button
                                             onClick={fetchCalendarEvents}
-                                            title="Làm mới lịch"
-                                            className="bg-blue-600 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-slate-300 shadow-sm"
+                                            className="bg-blue-600 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                                         >
                                             Làm mới / Đồng bộ Calendar
                                         </button>
@@ -1186,7 +1165,7 @@
                                                                 )}
                                                             </span>
 
-                                                            <p className="font-semibold text-slate-700 leading-snug line-clamp-2 text-xs md:text-sm group-hover/ev:line-clamp-none transition-all break-words" title={ev.summary}>
+                                                            <p className="font-semibold text-slate-700 leading-snug text-xs md:text-sm truncate" title={ev.summary}>
                                                                 {ev.summary || "Sự kiện"}
                                                             </p>
                                                         </div>
@@ -1546,17 +1525,17 @@
             };
 
             // =========================
-            // RETURN
+            // MAIN RETURN
             // =========================
             return (
                 <div className="min-h-screen cute-grid">
                     <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 flex flex-col gap-8 relative z-10">
                         <header className="mb-2">
                             <h2 className="text-3xl md:text-5xl font-emphasis text-slate-800 mb-2 tracking-tight">
-                                Pink Study Tracker
+                                Pink Study Tracker 🎀
                             </h2>
 
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-wrap">
                                 <p className="text-slate-500 font-medium flex items-center gap-2">
                                     🌸 Cute Planner for Study & Work
                                 </p>
@@ -1579,6 +1558,12 @@
                                     {syncStatus === "error" && (
                                         <span className="text-[11px] font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1.5">
                                             Lỗi đồng bộ DB
+                                        </span>
+                                    )}
+
+                                    {syncStatus === "idle" && syncMessage && (
+                                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                                            {syncMessage}
                                         </span>
                                     )}
                                 </div>
